@@ -1,0 +1,25 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: "Jost", sans-serif;
+  scroll-behavior: smooth;
+  transition: all 0.25s linear;
+}
+
+#root
+  > div.w-full.flex.flex-col.min-h-screen.justify-between.bg-\[\#f3f6fa\]
+  > div
+  > div.w-full.smlg\:w-11\/12.flex.flex-col
+  > div.flex.flex-col.px-14.pt-8
+  > div
+  > div.mantine-datatable.mantine-datatable-with-border
+  > div.mantine-datatable-pagination
+  > div.mantine-datatable-pagination-pages.m_4addd315.mantine-Pagination-root
+  > div
+  > button:nth-child(2) {
+  background-color: #1967d2 !important;
+}
