@@ -1,0 +1,187 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+enum Role {
+    ADMIN
+    USER
+
+    @@map("roles")
+}
+
+enum SlotSize {
+    SMALL
+    MEDIUM
+    LARGE
+}
+
+enum VehicleType {
+    CAR
+    BIKE
+    TRUCK
+}
+
+enum PaymentStatus {
+    PENDING
+    PAID
+}
+
+enum PaymentMethod {
+    CASH
+    CARD
+    MOBILE
+}
+
+enum SlotStatus {
+    AVAILABLE
+    UNAVAILABLE
+}
+
+model User {
+    id             String            @id @default(uuid())
+    firstName      String            @map("first_name")
+    lastName       String            @map("last_name")
+    email          String            @unique
+    password       String
+    role           Role              @default(USER) @map("role")
+    isVerified     Boolean           @default(false) @map("is_verified")
+    createdAt      DateTime          @default(now()) @map("created_at")
+    updatedAt      DateTime          @updatedAt @map("updated_at")
+    ParkingSession ParkingSession[]
+    Payment        Payment[]
+    Vehicle        Vehicle[]
+    SlotRequest    SlotRequest[]
+    transfersFrom  VehicleTransfer[] @relation("TransfersFrom")
+    transfersTo    VehicleTransfer[] @relation("TransfersTo")
+
+    @@map("users")
+}
+
+model Vehicle {
+    id              String            @id @default(uuid())
+    plateNumber     String            @unique @map("plate_number")
+    vehicleType     VehicleType       @map("vehicle_type")
+    size            SlotSize          @map("size")
+    color           String            @map("color")
+    maker           String            @map("maker")
+    model           String            @map("model")
+    userId          String            @map("user_id")
+    user            User              @relation(fields: [userId], references: [id])
+    requests        SlotRequest[]
+    createdAt       DateTime          @default(now()) @map("created_at")
+    updatedAt       DateTime          @updatedAt @map("updated_at")
+    VehicleTransfer VehicleTransfer[]
+
+    @@map("vehicles")
+}
+
+enum RequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+model SlotRequest {
+    id        String        @id @default(uuid())
+    userId    String        @map("user_id")
+    vehicleId String        @map("vehicle_id")
+    slotId    String?       @map("slot_id")
+    status    RequestStatus @default(PENDING) @map("status")
+    slot      ParkingSlot?  @relation(fields: [slotId], references: [id])
+    vehicle   Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+    user      User          @relation(fields: [userId], references: [id])
+    createdAt DateTime      @default(now()) @map("created_at")
+    updatedAt DateTime      @updatedAt @map("updated_at")
+
+    @@map("slot_requests")
+}
+
+model ParkingSlot {
+    id             String           @id @default(uuid())
+    number         String           @unique
+    size           SlotSize         @map("size")
+    vehicleType    VehicleType
+    location       String
+    status         SlotStatus       @default(AVAILABLE)
+    createdAt      DateTime         @default(now()) @map("created_at")
+    updatedAt      DateTime         @updatedAt @map("updated_at")
+    ParkingSession ParkingSession[]
+    SlotRequest    SlotRequest[]
+
+    @@map("parking_slots")
+}
+
+model ParkingSession {
+    id String @id @default(uuid())
+
+    entryTime     DateTime      @default(now()) @map("start_time")
+    exitTime      DateTime?     @map("end_time")
+    paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+    plateNumber   String        @map("plate_number")
+    isExited      Boolean       @default(false) @map("is_exited")
+    slotId        String        @map("slot_id")
+    slot          ParkingSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+    payment       Payment?
+    userId        String        @map("user_id")
+    user          User          @relation(fields: [userId], references: [id])
+    createdAt     DateTime      @default(now()) @map("created_at")
+    updatedAt     DateTime      @updatedAt @map("updated_at")
+
+    @@map("parking_sessions")
+}
+
+model Payment {
+    id        String         @id @default(uuid())
+    sessionId String         @unique
+    amount    Float          @map("amount")
+    method    PaymentMethod  @map("method")
+    createdAt DateTime       @default(now()) @map("created_at")
+    updatedAt DateTime       @updatedAt @map("updated_at")
+    session   ParkingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    userId    String
+    user      User           @relation(fields: [userId], references: [id])
+
+    @@map("payments")
+}
+
+model Otp {
+    id         String   @id @default(uuid())
+    userId     String   @map("user_id")
+    otpCode    String   @map("otp_code")
+    expiresAt  DateTime @map("expires_at")
+    isVerified Boolean  @default(false) @map("is_verified")
+    createdAt  DateTime @default(now()) @map("created_at")
+    updatedAt  DateTime @updatedAt @map("updated_at")
+
+    @@map("otps")
+}
+
+enum TransferStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+model VehicleTransfer {
+    id           String         @id @default(uuid())
+    vehicleId    String         @map("vehicle_id")
+    fromUserId   String         @map("from_user_id")
+    description  String         @map("description")
+    toUserId     String         @map("to_user_id")
+    transferDate DateTime       @default(now()) @map("transfer_date")
+    price        Float?         @map("price")
+    status       TransferStatus @default(PENDING)
+    createdAt    DateTime       @default(now()) @map("created_at")
+    updatedAt    DateTime       @updatedAt @map("updated_at")
+
+    vehicle  Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+    fromUser User    @relation("TransfersFrom", fields: [fromUserId], references: [id])
+    toUser   User    @relation("TransfersTo", fields: [toUserId], references: [id])
+
+    @@map("vehicle_transfers")
+}
